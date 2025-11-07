@@ -26,17 +26,18 @@ function MapPage() {
     // Prevent map from being initialized more than once
     if (mapRef.current) return;
 
+    // Use environment variable for map tile URL
+    const mapTileUrl = import.meta.env.VITE_MAP_API_URL || 
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
     const map = L.map('map').setView([22.7196, 75.8577], 15);
     mapRef.current = map;
 
     // Add tile layer
-    L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: '&copy; Esri — Source: Esri, Maxar',
-        maxZoom: 20,
-      }
-    ).addTo(map);
+    L.tileLayer(mapTileUrl, {
+      attribution: '&copy; Esri — Source: Esri, Maxar',
+      maxZoom: 20,
+    }).addTo(map);
 
     // Load polygons from our service
     const loadBoxes = () => {

@@ -1,135 +1,134 @@
-# Welcome to your Lovable project
+# Nirmaan Vigil AI
 
-## Project info
+A comprehensive encroachment detection system with map visualization and building analysis capabilities.
 
-**URL**: https://lovable.dev/projects/d3afff30-7f10-4484-8b0e-f860cec3f0cb
+## Features
 
-## How can I edit this code?
+- Interactive map with color-coded building risk levels (red, yellow, green)
+- Building encroachment detection using AI analysis
+- Analytics dashboard with risk distribution statistics
+- Responsive UI with tab navigation
 
-There are several ways of editing your application.
+## Prerequisites
 
-**Use Lovable**
+- Node.js (v16 or higher)
+- npm (v8 or higher)
+- Docker (optional, for containerized deployment)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d3afff30-7f10-4484-8b0e-f860cec3f0cb) and start prompting.
+## Development Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-**Use your preferred IDE**
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d3afff30-7f10-4484-8b0e-f860cec3f0cb) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-# Nirmaan   AI - Encroachment Detection System
-
-## Project Overview
-
-Nirmaan   AI is an AI-powered monitoring system that detects and reports illegal land encroachments in real-time using aerial imagery and satellite data. The system helps city officials monitor public lands, roads, and community spaces to prevent unauthorized constructions that disrupt city planning.
-
-## Key Features
-
-### Computer Vision & Drone Data Analysis
-- AI models to identify changes in land usage from aerial imagery
-- Real-time detection of unauthorized constructions
-- Integration with drone data for high-resolution monitoring
-
-### Administrative Dashboard
-- Interactive map interface for officials to verify encroachment reports
-- Status tracking for all reported cases
-- Data visualization for trend analysis
-
-### Predictive Analytics
-- AI models to predict high-risk areas for future encroachments
-- Risk scoring for different zones
-- Proactive monitoring recommendations
-
-## How to Run This Project
-
-To run this project locally, follow these steps:
-
-```sh
-# Step 1: Navigate to the project directory.
-cd nirmaan- -ai
-
-# Step 2: Install the necessary dependencies.
-npm install
-
-# Step 3: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-The application will be available at http://localhost:8080
-
-## Technologies Used
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Leaflet Maps
-- Recharts for data visualization
+3. Open your browser to http://localhost:8080
 
 ## Deployment
 
-To build the project for production, run:
+### Option 1: Docker Deployment (Recommended)
 
-```sh
+1. Build and run with Docker Compose:
+   ```bash
+   npm run docker:compose
+   ```
+
+2. Access the application at http://localhost:8080
+
+### Option 2: Manual Deployment
+
+1. Build the application:
+   ```bash
+   npm run build
+   ```
+
+2. The built files will be in the `dist` directory. Deploy these files to your web server.
+
+### Option 3: Automated Deployment
+
+Run the deployment script:
+```bash
+npm run deploy
+```
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+VITE_API_URL=/api
+VITE_MAP_API_URL=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+├── data/               # Data services and mock data
+├── pages/              # Page components
+│   ├── admin/          # Admin dashboard pages
+│   └── citizen/        # Citizen-facing pages
+├── lib/                # Utility functions
+└── hooks/              # Custom React hooks
+```
+
+## API Endpoints
+
+In development, the application uses mock endpoints:
+- `/geojson` - Returns mock GeoJSON data for map visualization
+- `/predict` - Returns mock building analysis results
+
+In production, these should be replaced with actual backend services.
+
+## Building for Production
+
+```bash
 npm run build
 ```
 
-The built files will be available in the `dist` directory, which can be deployed to any static hosting service.
+The built files will be in the `dist` directory.
+
+## Running in Production Mode
+
+```bash
+npm run preview
+```
+
+## Docker Deployment
+
+1. Build the Docker image:
+   ```bash
+   npm run docker:build
+   ```
+
+2. Run the container:
+   ```bash
+   npm run docker:run
+   ```
+
+3. Or use Docker Compose:
+   ```bash
+   npm run docker:compose
+   ```
+
+## Health Check
+
+The application provides a health check endpoint at `/health.json`.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a pull request
+
+## License
+
+This project is licensed under the MIT License.

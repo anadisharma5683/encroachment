@@ -5,7 +5,11 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
-    host: "::",
+    host: true,
+    port: 8080,
+  },
+  preview: {
+    host: true,
     port: 8080,
   },
   plugins: [
@@ -13,17 +17,15 @@ export default defineConfig({
     {
       name: 'geojson-middleware',
       configureServer(server) {
+        // Mock geojson endpoint for development
         server.middlewares.use('/geojson', (req, res, next) => {
-          // Mock geojson endpoint
           if (req.method === 'GET') {
-            // Parse query parameters
             const url = new URL(req.url || '', `http://${req.headers.host}`);
             const north = parseFloat(url.searchParams.get('north') || '0');
             const south = parseFloat(url.searchParams.get('south') || '0');
             const east = parseFloat(url.searchParams.get('east') || '0');
             const west = parseFloat(url.searchParams.get('west') || '0');
             
-            // Mock data - in a real implementation this would filter based on bounds
             const mockData = {
               "type": "FeatureCollection",
               "features": [
@@ -108,10 +110,9 @@ export default defineConfig({
           }
         });
         
-        // Mock predict endpoint
+        // Mock predict endpoint for development
         server.middlewares.use('/predict', (req, res, next) => {
           if (req.method === 'POST') {
-            // Mock prediction response
             const mockResponse = {
               predicted_class: "High Risk",
               class_index: 0,
@@ -134,4 +135,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Build configuration for production
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react', 'framer-motion'],
+          maps: ['leaflet']
+        }
+      }
+    }
+  }
 });

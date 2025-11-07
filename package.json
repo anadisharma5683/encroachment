@@ -1,15 +1,19 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && node deploy.js",
+    "docker:build": "docker build -t nirmaan-vigil-ai .",
+    "docker:run": "docker run -p 8080:80 nirmaan-vigil-ai",
+    "docker:compose": "docker-compose up -d"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
@@ -42,7 +46,6 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@tanstack/react-query": "^5.83.0",
-    "@types/geojson": "^7946.0.16",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",
@@ -75,6 +78,7 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
+    "@types/geojson": "^7946.0.8",
     "@types/leaflet": "^1.9.20",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
