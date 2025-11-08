@@ -17,12 +17,13 @@ import { complaints as dummyComplaints } from "../../data/complaints";
 import ComplaintPopup from "../../components/ComplaintPopup";
 import type { Complaint } from "@/types";
 import { motion } from "framer-motion";
-import { MapPin, AlertTriangle, TrendingUp, Eye } from "lucide-react";
+import { MapPin, AlertTriangle, TrendingUp, Eye, Camera } from "lucide-react";
 import AdminNavigation from "@/components/AdminNavigation";
 import {
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
+import { detectBuildingEncroachmentAPI } from "@/data/buildingDetectionService";
 
 // Colors for Pie Chart (New, Pending, Resolved)
 const COLORS = ["#f87171", "#facc15", "#4ade80"]; // red, yellow, green
@@ -110,6 +111,13 @@ const AdminDashboard = () => {
   const [showAllNew, setShowAllNew] = useState(false);
   const [showAllPending, setShowAllPending] = useState(false);
   const [showAllResolved, setShowAllResolved] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const countByStatus = (status: string) =>
     complaints.filter((c) => c.status === status).length;
@@ -203,9 +211,221 @@ const AdminDashboard = () => {
     );
   };
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Prefer rear camera on mobile
+      });
+      setCameraStream(stream);
+      setCameraActive(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      alert('Could not access camera. Please ensure you have given camera permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraActive(false);
+    setCapturedImage(null);
+  };
+
+  const captureImage = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw video frame to canvas
+      context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to data URL and set as captured image
+      const imageDataUrl = canvas.toDataURL('image/jpeg');
+      setCapturedImage(imageDataUrl);
+    }
+  };
+
+  const analyzeImage = async () => {
+    if (!capturedImage) return;
+    
+    setIsAnalyzing(true);
+    try {
+      // Convert data URL to Blob
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      
+      // Create File object
+      const file = new File([blob], 'captured-image.jpg', { type: 'image/jpeg' });
+      
+      // Send to detection service
+      const result = await detectBuildingEncroachmentAPI(file);
+      setAnalysisResult(result);
+    } catch (err) {
+      console.error('Error analyzing image:', err);
+      alert('Failed to analyze image. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-gray-200">
       <AdminNavigation />
+
+      {/* Camera UI Overlay */}
+      {cameraActive && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-[2000] flex flex-col">
+          <div className="p-4 text-white flex justify-between items-center">
+            <h2 className="text-xl font-bold">Camera</h2>
+            <button 
+              onClick={stopCamera}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+            >
+              Close
+            </button>
+          </div>
+          
+          <div className="flex-grow flex items-center justify-center relative">
+            {!capturedImage ? (
+              <>
+                <video 
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+                <button
+                  onClick={captureImage}
+                  className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full border-4 border-gray-300 flex items-center justify-center"
+                >
+                  <div className="w-12 h-12 bg-red-500 rounded-full"></div>
+                </button>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center">
+                <img 
+                  src={capturedImage} 
+                  alt="Captured" 
+                  className="max-h-[70vh] object-contain"
+                />
+                <div className="flex space-x-4 mt-4">
+                  <button
+                    onClick={() => setCapturedImage(null)}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Retake
+                  </button>
+                  <button
+                    onClick={analyzeImage}
+                    disabled={isAnalyzing}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center disabled:opacity-50"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                        Analyzing...
+                      </>
+                    ) : (
+                      'Analyze Image'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
+      
+      {/* Analysis Results Modal */}
+      {analysisResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-[2001] flex items-center justify-center">
+          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 border border-slate-700">
+            <h3 className="text-xl font-bold mb-4 text-gray-100">Analysis Results</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-400">Predicted Risk Level</p>
+                <p className={`text-2xl font-bold ${
+                  analysisResult.predicted_class === 'High Risk' ? 'text-red-400' :
+                  analysisResult.predicted_class === 'Medium Risk' ? 'text-yellow-400' : 'text-green-400'
+                }`}>
+                  {analysisResult.predicted_class}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Confidence Scores</p>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>High Risk</span>
+                      <span>{(analysisResult.probabilities[0] * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div 
+                        className="bg-red-500 h-2 rounded-full" 
+                        style={{ width: `${analysisResult.probabilities[0] * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Medium Risk</span>
+                      <span>{(analysisResult.probabilities[1] * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-500 h-2 rounded-full" 
+                        style={{ width: `${analysisResult.probabilities[1] * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Low Risk</span>
+                      <span>{(analysisResult.probabilities[2] * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full" 
+                        style={{ width: `${analysisResult.probabilities[2] * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setAnalysisResult(null);
+                  setCapturedImage(null);
+                  stopCamera();
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-6 md:p-10">
         <motion.h1
@@ -222,7 +442,7 @@ const AdminDashboard = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
         >
           <StatCard
             index={1}
@@ -252,6 +472,19 @@ const AdminDashboard = () => {
             value={`${resolutionRate}%`}
             colorClass="text-green-400"
           />
+          {/* Camera Button Card */}
+          <motion.div
+            custom={5}
+            variants={fadeInUp}
+            whileHover={cardHover}
+            className="bg-slate-800 shadow-lg rounded-2xl p-6 flex items-center justify-center cursor-pointer border border-slate-700 hover:border-cyan-500 transition-colors"
+            onClick={startCamera}
+          >
+            <div className="flex flex-col items-center">
+              <Camera className="w-8 h-8 text-cyan-400 mb-2" />
+              <span className="text-sm text-gray-300 text-center">Capture & Analyze</span>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Charts Section */}
