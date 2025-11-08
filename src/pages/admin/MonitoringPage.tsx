@@ -32,17 +32,43 @@ const MonitoringPage = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // Prefer rear camera on mobile
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
       setCameraStream(stream);
       setCameraActive(true);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // Use setTimeout to ensure the video element is rendered before setting the srcObject
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
     } catch (err) {
       console.error('Error accessing camera:', err);
-      alert('Could not access camera. Please ensure you have given camera permissions.');
+      // Try again with default constraints if environment camera fails
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        setCameraStream(stream);
+        setCameraActive(true);
+        
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        }, 100);
+      } catch (err2) {
+        console.error('Error accessing any camera:', err2);
+        alert('Could not access camera. Please ensure you have given camera permissions.');
+      }
     }
   };
 
@@ -114,14 +140,14 @@ const MonitoringPage = () => {
             </button>
           </div>
           
-          <div className="flex-grow flex items-center justify-center relative">
+          <div className="flex-grow flex items-center justify-center relative bg-black">
             {!capturedImage ? (
               <>
                 <video 
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain max-h-[70vh]"
                 />
                 <button
                   onClick={captureImage}
