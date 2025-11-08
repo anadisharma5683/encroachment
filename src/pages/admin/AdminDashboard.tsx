@@ -306,7 +306,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-gray-200">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <AdminNavigation />
 
       {/* Camera UI Overlay */}
@@ -348,7 +348,7 @@ const AdminDashboard = () => {
                 <div className="flex space-x-4 mt-4">
                   <button
                     onClick={() => setCapturedImage(null)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
                   >
                     Retake
                   </button>
@@ -378,29 +378,29 @@ const AdminDashboard = () => {
       {/* Analysis Results Modal */}
       {analysisResult && (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-[2001] flex items-center justify-center">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 border border-slate-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-100">Analysis Results</h3>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 border border-gray-200 shadow-lg">
+            <h3 className="text-xl font-bold mb-4 text-gray-900">Analysis Results</h3>
             
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-400">Predicted Risk Level</p>
+                <p className="text-sm text-gray-600">Predicted Risk Level</p>
                 <p className={`text-2xl font-bold ${
-                  analysisResult.predicted_class === 'High Risk' ? 'text-red-400' :
-                  analysisResult.predicted_class === 'Medium Risk' ? 'text-yellow-400' : 'text-green-400'
+                  analysisResult.predicted_class === 'High Risk' ? 'text-red-600' :
+                  analysisResult.predicted_class === 'Medium Risk' ? 'text-yellow-600' : 'text-green-600'
                 }`}>
                   {analysisResult.predicted_class}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-gray-400 mb-2">Confidence Scores</p>
+                <p className="text-sm text-gray-600 mb-2">Confidence Scores</p>
                 <div className="space-y-2">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>High Risk</span>
                       <span>{(analysisResult.probabilities[0] * 100).toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-red-500 h-2 rounded-full" 
                         style={{ width: `${analysisResult.probabilities[0] * 100}%` }}
@@ -413,7 +413,7 @@ const AdminDashboard = () => {
                       <span>Medium Risk</span>
                       <span>{(analysisResult.probabilities[1] * 100).toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-yellow-500 h-2 rounded-full" 
                         style={{ width: `${analysisResult.probabilities[1] * 100}%` }}
@@ -426,7 +426,7 @@ const AdminDashboard = () => {
                       <span>Low Risk</span>
                       <span>{(analysisResult.probabilities[2] * 100).toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full" 
                         style={{ width: `${analysisResult.probabilities[2] * 100}%` }}
@@ -458,7 +458,7 @@ const AdminDashboard = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500"
+          className="text-4xl font-bold mb-8 text-gray-900"
         >
           Encroachment Monitoring Dashboard
         </motion.h1>
@@ -475,40 +475,40 @@ const AdminDashboard = () => {
             icon={<Eye className="w-6 h-6" />}
             label="Total Cases"
             value={complaints.length}
-            colorClass="text-blue-400"
+            colorClass="text-blue-500"
           />
           <StatCard
             index={2}
             icon={<AlertTriangle className="w-6 h-6" />}
             label="Pending"
             value={countByStatus("Pending")}
-            colorClass="text-yellow-400"
+            colorClass="text-yellow-500"
           />
           <StatCard
             index={3}
             icon={<MapPin className="w-6 h-6" />}
             label="New Reports"
             value={countByStatus("New")}
-            colorClass="text-red-400"
+            colorClass="text-red-500"
           />
           <StatCard
             index={4}
             icon={<TrendingUp className="w-6 h-6" />}
             label="Resolution Rate"
             value={`${resolutionRate}%`}
-            colorClass="text-green-400"
+            colorClass="text-green-500"
           />
           {/* Camera Button Card */}
           <motion.div
             custom={5}
             variants={fadeInUp}
             whileHover={cardHover}
-            className="bg-slate-800 shadow-lg rounded-2xl p-6 flex items-center justify-center cursor-pointer border border-slate-700 hover:border-cyan-500 transition-colors"
+            className="bg-white shadow-lg rounded-2xl p-6 flex items-center justify-center cursor-pointer border border-gray-200 hover:border-blue-300 transition-colors"
             onClick={startCamera}
           >
             <div className="flex flex-col items-center">
-              <Camera className="w-8 h-8 text-cyan-400 mb-2" />
-              <span className="text-sm text-gray-300 text-center">Capture & Analyze</span>
+              <Camera className="w-8 h-8 text-blue-500 mb-2" />
+              <span className="text-sm text-gray-700 text-center">Capture & Analyze</span>
             </div>
           </motion.div>
         </motion.div>
@@ -523,9 +523,9 @@ const AdminDashboard = () => {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="bg-slate-800 shadow-xl rounded-2xl p-6 border border-slate-700"
+            className="bg-white shadow-xl rounded-2xl p-6 border border-gray-200"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-100">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">
               Encroachment Status Overview
             </h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -549,7 +549,7 @@ const AdminDashboard = () => {
                   ))}
                 </Pie>
                 <Legend
-                  wrapperStyle={{ color: "#d1d5db", paddingTop: "10px" }}
+                  wrapperStyle={{ color: "#374151", paddingTop: "10px" }}
                 />
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
@@ -564,19 +564,19 @@ const AdminDashboard = () => {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="bg-slate-800 shadow-xl rounded-2xl p-6 border border-slate-700"
+            className="bg-white shadow-xl rounded-2xl p-6 border border-gray-200"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-100">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">
               High-Risk Zones (Predictive Analytics)
             </h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={riskZones}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                <XAxis dataKey="zone" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="zone" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
-                  wrapperStyle={{ color: "#d1d5db", paddingTop: "10px" }}
+                  wrapperStyle={{ color: "#374151", paddingTop: "10px" }}
                 />
                 <Bar dataKey="risk" fill="#f87171" name="Risk Score" />
                 <Bar dataKey="cases" fill="#4ade80" name="Current Cases" />
