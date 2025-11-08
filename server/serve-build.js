@@ -20,7 +20,7 @@ const serveStaticFile = (req, res) => {
   // Get the file extension
   const extname = path.extname(filePath).toLowerCase();
   
-  // Set the content type based on file extension
+  // Set the  content type based on file extension
   const mimeTypes = {
     '.html': 'text/html',
     '.js': 'text/javascript',
