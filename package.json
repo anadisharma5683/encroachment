@@ -13,7 +13,9 @@
     "deploy": "npm run build && node deploy.js",
     "docker:build": "docker build -t nirmaan-vigil-ai .",
     "docker:run": "docker run -p 8080:80 nirmaan-vigil-ai",
-    "docker:compose": "docker-compose up -d"
+    "docker:compose": "docker-compose up -d",
+    "server": "cd server && npm start",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",

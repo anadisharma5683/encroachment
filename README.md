@@ -1,134 +1,105 @@
-# Nirmaan Vigil AI
+# Encroachment Reporting System with MongoDB Integration
 
-A comprehensive encroachment detection system with map visualization and building analysis capabilities.
-
-## Features
-
-- Interactive map with color-coded building risk levels (red, yellow, green)
-- Building encroachment detection using AI analysis
-- Analytics dashboard with risk distribution statistics
-- Responsive UI with tab navigation
+This project integrates MongoDB with the login system to store and validate user credentials.
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
-- npm (v8 or higher)
-- Docker (optional, for containerized deployment)
-
-## Development Setup
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-3. Open your browser to http://localhost:8080
-
-## Deployment
-
-### Option 1: Docker Deployment (Recommended)
-
-1. Build and run with Docker Compose:
-   ```bash
-   npm run docker:compose
-   ```
-
-2. Access the application at http://localhost:8080
-
-### Option 2: Manual Deployment
-
-1. Build the application:
-   ```bash
-   npm run build
-   ```
-
-2. The built files will be in the `dist` directory. Deploy these files to your web server.
-
-### Option 3: Automated Deployment
-
-Run the deployment script:
-```bash
-npm run deploy
-```
-
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```
-VITE_API_URL=/api
-VITE_MAP_API_URL=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
-```
+- Node.js (v14 or higher)
+- MongoDB Atlas account (connection string already configured)
 
 ## Project Structure
 
 ```
-src/
-├── components/          # Reusable UI components
-├── data/               # Data services and mock data
-├── pages/              # Page components
-│   ├── admin/          # Admin dashboard pages
-│   └── citizen/        # Citizen-facing pages
-├── lib/                # Utility functions
-└── hooks/              # Custom React hooks
+encroachment/
+├── src/              # Frontend React application
+├── server/           # Backend API server
+│   ├── server.js     # Main server file (using Node.js HTTP module)
+│   ├── package.json  # Server dependencies
+│   └── seed.js       # Database seeding script
+├── package.json      # Root project configuration
+└── ...
+```
+
+## Setup Instructions
+
+1. **Install Dependencies:**
+   ```bash
+   # Install frontend dependencies
+   npm install
+   
+   # Install backend dependencies
+   cd server
+   npm install
+   cd ..
+   ```
+
+2. **Seed the Database:**
+   ```bash
+   cd server
+   node seed.js
+   ```
+   This creates three test users:
+   - Admin: username `admin`, password `1`
+   - Employee: username `employee`, password `1`
+   - Citizen: username `citizen`, password `1`
+
+3. **Run the Application:**
+   
+   You can run the frontend and backend separately or together:
+   
+   **Option 1: Run separately**
+   ```bash
+   # Terminal 1 - Start backend server
+   cd server
+   npm start
+   
+   # Terminal 2 - Start frontend
+   npm run dev
+   ```
+   
+   **Option 2: Run concurrently**
+   ```bash
+   npm run dev:full
+   ```
+
+4. **Access the Application:**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5003
+
+## MongoDB Integration
+
+The login system now uses MongoDB to validate user credentials. The connection is established with:
+
+```
+mongodb+srv://osirisuzu2_db_user:T7QMnuOtXx6wVSTJ@cluster0.wvephzd.mongodb.net/?appName=Cluster0
 ```
 
 ## API Endpoints
 
-In development, the application uses mock endpoints:
-- `/geojson` - Returns mock GeoJSON data for map visualization
-- `/predict` - Returns mock building analysis results
+- `POST /api/login` - Authenticate user
+- `POST /api/register` - Register new user
+- `GET /api/health` - Health check
 
-In production, these should be replaced with actual backend services.
+## Test Credentials
 
-## Building for Production
+Use these credentials to test the login functionality:
+- Username: `admin`, Password: `1` (Admin role)
+- Username: `employee`, Password: `1` (Employee role)
+- Username: `citizen`, Password: `1` (Citizen role)
 
-```bash
-npm run build
-```
+## New Features
 
-The built files will be in the `dist` directory.
+1. **User Registration**: New users can register through the registration page at `/register`
+2. **Role-based Access**: Users are redirected to different dashboards based on their roles
+3. **Environment Configuration**: Uses environment variables for API URLs and database connections
+4. **Lightweight Server**: Uses Node.js built-in HTTP module instead of Express
 
-## Running in Production Mode
+## Security Notes
 
-```bash
-npm run preview
-```
-
-## Docker Deployment
-
-1. Build the Docker image:
-   ```bash
-   npm run docker:build
-   ```
-
-2. Run the container:
-   ```bash
-   npm run docker:run
-   ```
-
-3. Or use Docker Compose:
-   ```bash
-   npm run docker:compose
-   ```
-
-## Health Check
-
-The application provides a health check endpoint at `/health.json`.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
-
-## License
-
-This project is licensed under the MIT License.
+For production use, you should:
+1. Hash passwords before storing in the database
+2. Use environment variables for sensitive data
+3. Implement proper session management
+4. Add input validation and sanitization
+5. Implement rate limiting for login attempts
+6. Use HTTPS in production

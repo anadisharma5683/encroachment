@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import CitizenPanel from "./pages/CitizenPanel";
 import ComplaintDashboard from "./pages/citizen/ComplaintDashboard";
 
@@ -37,6 +38,7 @@ const App = () => (
           {/* Common Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/citizen" element={<CitizenPanel />} />
           <Route path="*" element={<NotFound />} />
 
