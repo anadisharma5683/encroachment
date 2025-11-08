@@ -10,6 +10,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "serve:build": "node server/serve-build.js",
     "deploy": "npm run build && node deploy.js",
     "docker:build": "docker build -t nirmaan-vigil-ai .",
     "docker:run": "docker run -p 8080:80 nirmaan-vigil-ai",
