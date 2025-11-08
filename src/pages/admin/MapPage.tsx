@@ -3,9 +3,10 @@ import { useEffect, useRef } from 'react';
 import L, { Map as LeafletMap, GeoJSON } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { Eye, AlertTriangle, MapPin, Zap } from 'lucide-react';
+import { Eye, AlertTriangle, MapPin, Zap, ArrowLeft } from 'lucide-react';
 import { fetchGeoData } from '@/data/geoDataService';
 import { FeatureCollection, Geometry } from 'geojson';
+import { useNavigate } from 'react-router-dom';
 
 interface CustomProperties {
   color: string;
@@ -21,6 +22,7 @@ interface CustomProperties {
 function MapPage() {
   const mapRef = useRef<LeafletMap | null>(null);
   const geoJsonLayerRef = useRef<GeoJSON | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Prevent map from being initialized more than once
@@ -123,8 +125,17 @@ function MapPage() {
     <div className="h-screen w-full relative">
       <div id="map" className="h-full w-full"></div>
       
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/admin')}
+        className="absolute top-4 left-4 bg-white rounded-full shadow-lg p-3 z-[1001] hover:bg-gray-100 transition-colors"
+        aria-label="Go back"
+      >
+        <ArrowLeft className="w-5 h-5 text-gray-800" />
+      </button>
+      
       {/* Map Controls Overlay */}
-      <div className="absolute top-4 left-4 bg-white rounded-xl shadow-lg p-4 z-[1000]">
+      <div className="absolute top-4 left-16 bg-white rounded-xl shadow-lg p-4 z-[1000]">
         <h2 className="text-lg font-bold mb-3 text-gray-800">Encroachment Detection</h2>
         <div className="space-y-2">
           <div className="flex items-center">

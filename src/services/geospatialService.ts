@@ -22,9 +22,9 @@ export interface GeoFeature {
   type: string;
   geometry: {
     type: string;
-    coordinates: any;
+    coordinates: unknown;
   };
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
 }
 
 // Geospatial calculations
@@ -139,15 +139,16 @@ class GeospatialService {
   ): GeoFeature[] {
     return features.filter(feature => {
       if (feature.geometry.type === 'Point') {
+        const coordinates = feature.geometry.coordinates as [number, number];
         const point = {
-          lat: feature.geometry.coordinates[1],
-          lng: feature.geometry.coordinates[0]
+          lat: coordinates[1],
+          lng: coordinates[0]
         };
         return this.isPointInBoundingBox(point, bbox);
       } else if (feature.geometry.type === 'Polygon') {
         // For polygons, check if any point is within the bbox
-        const coordinates = feature.geometry.coordinates[0];
-        for (const coord of coordinates) {
+        const coordinates = feature.geometry.coordinates as [number, number][][];
+        for (const coord of coordinates[0]) {
           const point = { lat: coord[1], lng: coord[0] };
           if (this.isPointInBoundingBox(point, bbox)) {
             return true;

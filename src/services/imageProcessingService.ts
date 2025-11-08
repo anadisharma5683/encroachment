@@ -5,7 +5,7 @@ export interface ImageAnalysisResult {
   predictedClass: string;
   classIndex: number;
   probabilities: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ProcessedImageData {
@@ -125,7 +125,7 @@ class ImageProcessingService {
   }
 
   // Extract metadata from image file
-  extractImageMetadata(file: File): Record<string, any> {
+  extractImageMetadata(file: File): Record<string, unknown> {
     return {
       name: file.name,
       size: file.size,

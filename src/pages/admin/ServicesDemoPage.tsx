@@ -19,7 +19,7 @@ import {
 import AdminNavigation from '@/components/AdminNavigation';
 import { notificationService, Notification, Alert } from '@/services/notificationService';
 import { geospatialService, GeoPoint, BoundingBox } from '@/services/geospatialService';
-import { imageProcessingService, ProcessedImageData } from '@/services/imageProcessingService';
+import { imageProcessingService, ProcessedImageData, ImageAnalysisResult } from '@/services/imageProcessingService';
 
 const ServicesDemoPage = () => {
   // Notification state
@@ -59,7 +59,7 @@ const ServicesDemoPage = () => {
   // Image processing state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [processedImage, setProcessedImage] = useState<ProcessedImageData | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,7 +84,7 @@ const ServicesDemoPage = () => {
       const area = geospatialService.calculatePolygonArea(geoPoints);
       setAreaResult(area);
     }
-  }, []);
+  }, [geoPoints]);
 
   // Handle notification form changes
   const handleNotificationChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -304,7 +304,7 @@ const ServicesDemoPage = () => {
                   <Label htmlFor="priority" className="text-gray-700">Priority</Label>
                   <Select
                     value={notificationForm.priority}
-                    onValueChange={(value) => setNotificationForm(prev => ({ ...prev, priority: value as any }))}
+                    onValueChange={(value: 'low' | 'medium' | 'high') => setNotificationForm(prev => ({ ...prev, priority: value }))}
                   >
                     <SelectTrigger className="border-gray-300 focus:ring-blue-500 focus:border-blue-500">
                       <SelectValue />
@@ -595,7 +595,7 @@ const ServicesDemoPage = () => {
                 </div>
                 
                 {distanceResult !== null && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-5 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800">
                       Distance between first two points: {distanceResult.toFixed(2)} meters
                     </p>
@@ -711,7 +711,7 @@ const ServicesDemoPage = () => {
                 
                 {processedImage && (
                   <div className="space-y-3">
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="p-3 bg-blue-5 rounded-lg border border-blue-200">
                       <p className="text-sm text-blue-800">
                         Processed: {processedImage.width}x{processedImage.height} pixels
                       </p>

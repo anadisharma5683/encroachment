@@ -8,7 +8,7 @@ export interface Notification {
   message: string;
   priority: 'low' | 'medium' | 'high';
   recipients: string[];
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   createdAt: Date;
   read: boolean;
   status: 'active' | 'inactive';
@@ -23,15 +23,15 @@ export interface Alert {
   };
   severity: 'low' | 'medium' | 'high';
   description: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: Date;
   status: 'new' | 'acknowledged' | 'resolved';
   assignedTo: string | null;
 }
 
 // In-memory storage for notifications and alerts
-let notifications: Notification[] = [];
-let alerts: Alert[] = [];
+const notifications: Notification[] = [];
+const alerts: Alert[] = [];
 
 class NotificationService {
   // Create a new notification
@@ -40,7 +40,7 @@ class NotificationService {
     message: string,
     priority: 'low' | 'medium' | 'high' = 'medium',
     recipients: string[] = [],
-    data: Record<string, any> = {}
+    data: Record<string, unknown> = {}
   ): string {
     const id = uuidv4();
     const notification: Notification = {
@@ -65,7 +65,7 @@ class NotificationService {
     location: { lat: number; lng: number },
     severity: 'low' | 'medium' | 'high',
     description: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): string {
     const id = uuidv4();
     const alert: Alert = {
@@ -143,7 +143,7 @@ class NotificationService {
     if (alert) {
       alert.status = 'resolved';
       if (resolutionNotes) {
-        alert.metadata.resolutionNotes = resolutionNotes;
+        (alert.metadata as Record<string, unknown>).resolutionNotes = resolutionNotes;
       }
       return true;
     }
@@ -166,9 +166,14 @@ class NotificationService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     const initialLength = notifications.length;
-    notifications = notifications.filter(
+    // Filter out old notifications
+    const filteredNotifications = notifications.filter(
       n => n.createdAt > thirtyDaysAgo
     );
+    
+    // Clear the array and push new items
+    notifications.length = 0;
+    notifications.push(...filteredNotifications);
     
     return initialLength - notifications.length;
   }
