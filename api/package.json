@@ -1,0 +1,9 @@
+{
+  "name": "nirmaan-vigil-ai-api",
+  "version": "1.0.0",
+  "description": "API functions for Nirmaan Vigil AI",
+  "main": "index.js",
+  "dependencies": {
+    "mongodb": "^6.3.0"
+  }
+}

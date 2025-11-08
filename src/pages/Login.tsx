@@ -55,7 +55,7 @@ const Login: React.FC = () => {
 
     try {
       // Make API call to backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5005"}/api/login`, {
+      const response = await fetch(`/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,7 +92,7 @@ const Login: React.FC = () => {
 
     try {
       // Make API call to backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5005"}/api/register`, {
+      const response = await fetch(`/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
