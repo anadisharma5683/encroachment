@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bounding Boxes</title>
+    <style>
+        .container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border: 1px solid #ccc;
+            margin: 20px;
+        }
+        
+        .image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* CSS for image detection bounding boxes */
+        .detection-box {
+            position: absolute;
+            border: 2px solid;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .detection-box.high-risk {
+            border-color: #ef4444; /* red-500 */
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .detection-box.medium-risk {
+            border-color: #eab308; /* yellow-500 */
+            background-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .detection-box.low-risk {
+            border-color: #22c55e; /* green-500 */
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .detection-label {
+            position: absolute;
+            top: -24px;
+            left: 0;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        .detection-label.high-risk {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+
+        .detection-label.medium-risk {
+            background-color: #eab308; /* yellow-500 */
+            color: black;
+        }
+
+        .detection-label.low-risk {
+            background-color: #22c55e; /* green-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Bounding Boxes</h1>
+    
+    <div class="container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Rajwada_Indore_01.jpg/800px-Rajwada_Indore_01.jpg" alt="Test Image" class="image">
+        
+        <!-- High risk box -->
+        <div class="detection-box high-risk" style="left: 20%; top: 30%; width: 25%; height: 30%;">
+            <div class="detection-label high-risk">High Risk</div>
+        </div>
+        
+        <!-- Medium risk box -->
+        <div class="detection-box medium-risk" style="left: 50%; top: 40%; width: 20%; height: 25%;">
+            <div class="detection-label medium-risk">Medium Risk</div>
+        </div>
+        
+        <!-- Low risk box -->
+        <div class="detection-box low-risk" style="left: 30%; top: 60%; width: 15%; height: 20%;">
+            <div class="detection-label low-risk">Low Risk</div>
+        </div>
+    </div>
+</body>
+</html>

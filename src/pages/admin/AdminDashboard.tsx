@@ -1,111 +1,79 @@
-import React, { useState } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  TooltipProps,
-} from "recharts";
-import { complaints as dummyComplaints } from "../../data/complaints";
-import ComplaintPopup from "../../components/ComplaintPopup";
-import type { Complaint } from "@/types";
-import { motion } from "framer-motion";
-import { MapPin, AlertTriangle, TrendingUp, Eye, Camera } from "lucide-react";
-import AdminNavigation from "@/components/AdminNavigation";
-import {
-  NameType,
-  ValueType,
-} from "recharts/types/component/DefaultTooltipContent";
-import { detectBuildingEncroachmentAPI } from "@/data/buildingDetectionService";
+import React, { useState, useEffect } from "react";
+import { motion, Transition } from "framer-motion";
+import { Camera, MapPin, AlertTriangle, CheckCircle, Clock, BarChart, Bell, Settings, Eye, Activity } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-// Colors for Pie Chart (New, Pending, Resolved)
-const COLORS = ["#f87171", "#facc15", "#4ade80"]; // red, yellow, green
-
-// Animation variants
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 }
-  }
+// Types
+type Complaint = {
+  _id?: string;
+  id?: number;
+  title: string;
+  description: string;
+  location: string;
+  status: "New" | "Pending" | "Resolved";
+  date: string;
+  submittedBy: string;
+  submittedAt: string;
 };
 
-const cardHover = {
-  y: -5,
-  scale: 1.02,
-  transition: { duration: 0.2 }
-};
+// Dummy data for initial display
+const dummyComplaints: Complaint[] = [
+  {
+    id: 1,
+    title: "Unauthorized 18-floor tower under construction",
+    description: "A residential tower with more than 18 floors is being built without registry clearance.",
+    location: "Scheme 78, Indore",
+    status: "New",
+    date: "2025-07-31",
+    submittedBy: "Ramesh Verma",
+    submittedAt: "2025-07-30T10:30:00Z",
+  },
+  {
+    id: 2,
+    title: "Encroachment on public road by builder",
+    description: "Builder has occupied 6 feet of public road for construction material.",
+    location: "MG Road, Indore",
+    status: "Pending",
+    date: "2025-07-30",
+    submittedBy: "Suresh Joshi",
+    submittedAt: "2025-07-29T14:20:00Z",
+  },
+  {
+    id: 3,
+    title: "Illegal 16-floor building without approval",
+    description: "The building doesn't have municipal approval yet construction is in full swing.",
+    location: "Rajendra Nagar, Indore",
+    status: "Resolved",
+    date: "2025-07-28",
+    submittedBy: "Anjali Deshmukh",
+    submittedAt: "2025-07-27T09:15:00Z",
+  },
+];
 
-const itemHover = {
-  scale: 1.03,
-  transition: { duration: 0.2 }
-};
+// Status Legend Component
+const StatusLegend = () => {
+  const legendData = [
+    { name: "New", value: 12, color: "bg-red-500" },
+    { name: "Pending", value: 5, color: "bg-yellow-500" },
+    { name: "Resolved", value: 23, color: "bg-green-500" },
+  ];
 
-// --- TypeScript Interface for StatCard ---
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  colorClass: string;
-  index: number;
-}
-
-// Stat Card Component
-const StatCard = ({
-  icon,
-  label,
-  value,
-  colorClass,
-  index,
-}: StatCardProps) => (
-  <motion.div
-    custom={index}
-    variants={fadeInUp}
-    whileHover={cardHover}
-    className="bg-slate-800 shadow-lg rounded-2xl p-6 flex items-center border border-slate-700"
-  >
-    <div
-      className={`w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mr-4 ${colorClass}`}
-    >
-      {icon}
-    </div>
-    <div>
-      <p className="text-sm text-gray-400">{label}</p>
-      <p className="text-2xl font-bold text-gray-100">{value}</p>
-    </div>
-  </motion.div>
-);
-
-// Custom Tooltip component for type safety
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: TooltipProps<ValueType, NameType>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-lg">
-        <p className="label text-sm text-gray-200">{`${label}`}</p>
-        {payload.map((pld, index) => (
-          <p key={index} style={{ color: pld.color }} className="text-xs">
+  return (
+    <div className="flex flex-wrap gap-4 mt-4">
+      {legendData.map((pld) => (
+        <div key={pld.name} className="flex items-center">
+          <div className={`w-4 h-4 ${pld.color} rounded-full mr-2`}></div>
+          <p className="text-sm text-gray-300">
             {`${pld.name}: ${pld.value}`}
           </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [complaints, setComplaints] = useState<Complaint[]>(dummyComplaints);
   const [popupComplaint, setPopupComplaint] = useState<Complaint | null>(null);
   const [showAllNew, setShowAllNew] = useState(false);
@@ -123,6 +91,36 @@ const AdminDashboard = () => {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
+  // Fetch complaints from backend
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api/complaints`);
+        const data = await response.json();
+        
+        if (data.success) {
+          // Convert backend complaints to frontend format
+          const formattedComplaints = data.complaints.map((complaint: any) => ({
+            _id: complaint._id,
+            title: complaint.name,
+            description: complaint.complaint,
+            location: "Not specified",
+            status: complaint.status,
+            date: new Date(complaint.submittedAt).toISOString().split('T')[0],
+            submittedBy: complaint.name,
+            submittedAt: complaint.submittedAt,
+          }));
+          
+          setComplaints(formattedComplaints);
+        }
+      } catch (error) {
+        console.error("Error fetching complaints:", error);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
+
   const countByStatus = (status: string) =>
     complaints.filter((c) => c.status === status).length;
 
@@ -134,321 +132,321 @@ const AdminDashboard = () => {
 
   const resolutionRate =
     complaints.length > 0
-      ? Math.round((countByStatus("Resolved") / complaints.length) * 100)
+      ? Math.round(
+          (complaints.filter((c) => c.status === "Resolved").length /
+            complaints.length) *
+            100
+        )
       : 0;
-      
-  // Sample data for predictive analytics
-  const riskZones = [
-    { zone: "Zone A", risk: 85, cases: 12 },
-    { zone: "Zone B", risk: 72, cases: 8 },
-    { zone: "Zone C", risk: 65, cases: 6 },
-    { zone: "Zone D", risk: 58, cases: 4 },
-    { zone: "Zone E", risk: 45, cases: 3 },
+
+  // Filter complaints by status
+  const newComplaints = complaints.filter((c) => c.status === "New");
+  const pendingComplaints = complaints.filter((c) => c.status === "Pending");
+  const resolvedComplaints = complaints.filter((c) => c.status === "Resolved");
+
+  // Animation variants
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: { delay: i * 0.1 } as Transition,
+    }),
+  };
+
+  const itemHover = {
+    scale: 1.03,
+    transition: { type: "spring" as const, stiffness: 400, damping: 10 },
+  };
+
+  // Navigation items
+  const navItems = [
+    { name: "Analytics", icon: BarChart, path: "/admin/analytics" },
+    { name: "Map View", icon: MapPin, path: "/admin/map" },
+    { name: "Alerts", icon: Bell, path: "/admin/alerts" },
+    { name: "Services", icon: Settings, path: "/admin/services" },
+    { name: "Monitoring", icon: Eye, path: "/admin/monitoring" },
   ];
 
-  const renderSection = (
-    status: string,
-    showAll: boolean,
-    toggleShow: () => void,
-    animationIndex: number
-  ) => {
-    const filtered = complaints.filter((c) => c.status === status);
-    const visibleComplaints = showAll ? filtered : filtered.slice(0, 3); // Changed to 3 for a tighter grid
-
-    return (
-      <motion.div
-        custom={animationIndex}
-        variants={fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }}
-        className="bg-slate-800 shadow-xl rounded-2xl p-6 mb-8 border border-slate-700"
-      >
-        <h2 className="text-2xl font-semibold mb-6 text-gray-100 border-b border-slate-600 pb-2">
-          {status} Encroachments
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {visibleComplaints.map((complaint, i) => (
-            <motion.div
-              key={complaint.id}
-              custom={i}
-              variants={fadeInUp}
-              whileHover={itemHover}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              className="cursor-pointer bg-slate-700 shadow-md hover:shadow-lg border border-slate-600 rounded-xl p-5 transition-all duration-200"
-              onClick={() => setPopupComplaint(complaint)}
-            >
-              <h3 className="font-semibold text-lg text-gray-100 mb-1">
-                {complaint.title}
-              </h3>
-              <p className="text-sm text-gray-400 mb-1">
-                {complaint.location}
-              </p>
-              <p
-                className={`text-sm mb-2 font-medium ${
-                  complaint.status === "Resolved"
-                    ? "text-green-400"
-                    : complaint.status === "Pending"
-                    ? "text-yellow-400"
-                    : "text-red-400"
-                }`}
-              >
-                Status: {complaint.status}
-              </p>
-              <p className="text-xs text-gray-500">{complaint.date}</p>
-            </motion.div>
-          ))}
-        </div>
-        {filtered.length > 3 && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={toggleShow}
-              className="text-sm text-blue-400 font-medium hover:text-blue-300 transition-colors"
-            >
-              {showAll ? "Show Less" : "Show All"}
-            </button>
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-      setCameraStream(stream);
-      setCameraActive(true);
-      
-      // Use setTimeout to ensure the video element is rendered before setting the srcObject
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }, 100);
-    } catch (err) {
-      console.error('Error accessing camera:', err);
-      // Try again with default constraints if environment camera fails
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        });
-        setCameraStream(stream);
-        setCameraActive(true);
-        
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        }, 100);
-      } catch (err2) {
-        console.error('Error accessing any camera:', err2);
-        alert('Could not access camera. Please ensure you have given camera permissions.');
-      }
-    }
-  };
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    setCameraActive(false);
-    setCapturedImage(null);
-  };
-
-  const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // Draw video frame to canvas
-      context?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      // Convert to data URL and set as captured image
-      const imageDataUrl = canvas.toDataURL('image/jpeg');
-      setCapturedImage(imageDataUrl);
-    }
-  };
-
-  const analyzeImage = async () => {
-    if (!capturedImage) return;
-    
-    setIsAnalyzing(true);
-    try {
-      // Convert data URL to Blob
-      const response = await fetch(capturedImage);
-      const blob = await response.blob();
-      
-      // Create File object
-      const file = new File([blob], 'captured-image.jpg', { type: 'image/jpeg' });
-      
-      // Send to detection service
-      const result = await detectBuildingEncroachmentAPI(file);
-      setAnalysisResult(result);
-    } catch (err) {
-      console.error('Error analyzing image:', err);
-      alert('Failed to analyze image. Please try again.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <AdminNavigation />
+    <div className="min-h-screen bg-slate-900 text-white p-6">
+      <header className="mb-10">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-bold text-center"
+        >
+          Admin Dashboard
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center text-slate-400 mt-2"
+        >
+          Monitor and manage encroachment complaints
+        </motion.p>
+      </header>
 
-      {/* Camera UI Overlay */}
-      {cameraActive && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-[2000] flex flex-col">
-          <div className="p-4 text-white flex justify-between items-center">
-            <h2 className="text-xl font-bold">Camera</h2>
-            <button 
-              onClick={stopCamera}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-            >
-              Close
-            </button>
+      {/* Navigation Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-10"
+      >
+        {navItems.map((item, index) => (
+          <motion.div
+            key={item.name}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 + index * 0.1 }}
+            className="bg-slate-800 rounded-xl p-4 shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
+            onClick={() => navigate(item.path)}
+          >
+            <div className="flex flex-col items-center justify-center">
+              <item.icon size={24} className="text-blue-400 mb-2" />
+              <h3 className="text-sm font-semibold text-center">{item.name}</h3>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10"
+      >
+        <div className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700">
+          <div className="flex items-center">
+            <AlertTriangle className="text-red-400 mr-3" size={24} />
+            <h3 className="text-xl font-semibold">New Complaints</h3>
           </div>
-          
-          <div className="flex-grow flex items-center justify-center relative bg-black">
-            {!capturedImage ? (
-              <>
-                <video 
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-contain max-h-[70vh]"
-                />
-                <button
-                  onClick={captureImage}
-                  className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full border-4 border-gray-300 flex items-center justify-center"
+          <p className="text-3xl font-bold mt-3 text-red-400">
+            {countByStatus("New")}
+          </p>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700">
+          <div className="flex items-center">
+            <Clock className="text-yellow-400 mr-3" size={24} />
+            <h3 className="text-xl font-semibold">Pending</h3>
+          </div>
+          <p className="text-3xl font-bold mt-3 text-yellow-400">
+            {countByStatus("Pending")}
+          </p>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700">
+          <div className="flex items-center">
+            <CheckCircle className="text-green-400 mr-3" size={24} />
+            <h3 className="text-xl font-semibold">Resolved</h3>
+          </div>
+          <p className="text-3xl font-bold mt-3 text-green-400">
+            {countByStatus("Resolved")}
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Resolution Rate */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 mb-10"
+      >
+        <h3 className="text-xl font-semibold mb-4">Resolution Rate</h3>
+        <div className="flex items-center">
+          <div className="relative w-24 h-24">
+            <svg className="w-full h-full" viewBox="0 0 36 36">
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#374151"
+                strokeWidth="3"
+              />
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#10B981"
+                strokeWidth="3"
+                strokeDasharray={`${resolutionRate}, 100`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl font-bold">{resolutionRate}%</span>
+            </div>
+          </div>
+          <div className="ml-6">
+            <p className="text-slate-300">
+              {resolvedComplaints.length} out of {complaints.length} complaints resolved
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Complaints Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* New Encroachments */}
+        <motion.section
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700"
+        >
+          <h2 className="text-2xl font-semibold mb-4 flex items-center">
+            <AlertTriangle className="text-red-400 mr-2" />
+            {showAllNew ? "All New Encroachments" : "New Encroachments"}
+          </h2>
+          <div className="space-y-4">
+            {(showAllNew ? newComplaints : newComplaints.slice(0, 3)).map(
+              (complaint, i) => (
+                <motion.div
+                  key={complaint._id || complaint.id}
+                  custom={i}
+                  variants={fadeInUp}
+                  whileHover={itemHover}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  className="cursor-pointer bg-slate-700 shadow-md hover:shadow-lg border border-slate-600 rounded-xl p-5 transition-all duration-200"
+                  onClick={() => setPopupComplaint(complaint)}
                 >
-                  <div className="w-12 h-12 bg-red-500 rounded-full"></div>
-                </button>
-              </>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center">
-                <img 
-                  src={capturedImage} 
-                  alt="Captured" 
-                  className="max-h-[70vh] object-contain"
-                />
-                <div className="flex space-x-4 mt-4">
-                  <button
-                    onClick={() => setCapturedImage(null)}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+                  <h3 className="font-semibold text-lg text-gray-100 mb-1">
+                    {complaint.title}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-1">
+                    {complaint.location}
+                  </p>
+                  <p
+                    className={`text-sm mb-2 font-medium ${
+                      complaint.status === "Resolved"
+                        ? "text-green-400"
+                        : complaint.status === "Pending"
+                        ? "text-yellow-400"
+                        : "text-red-400"
+                    }`}
                   >
-                    Retake
-                  </button>
-                  <button
-                    onClick={analyzeImage}
-                    disabled={isAnalyzing}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center disabled:opacity-50"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                        Analyzing...
-                      </>
-                    ) : (
-                      'Analyze Image'
-                    )}
-                  </button>
-                </div>
-              </div>
+                    Status: {complaint.status}
+                  </p>
+                  <p className="text-xs text-gray-500">{complaint.date}</p>
+                </motion.div>
+              )
             )}
           </div>
-          
-          <canvas ref={canvasRef} className="hidden" />
-        </div>
-      )}
-      
-      {/* Analysis Results Modal */}
-      {analysisResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-[2001] flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 border border-gray-200 shadow-lg">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">Analysis Results</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Predicted Risk Level</p>
-                <p className={`text-2xl font-bold ${
-                  analysisResult.predicted_class === 'High Risk' ? 'text-red-600' :
-                  analysisResult.predicted_class === 'Medium Risk' ? 'text-yellow-600' : 'text-green-600'
-                }`}>
-                  {analysisResult.predicted_class}
-                </p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Confidence Scores</p>
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>High Risk</span>
-                      <span>{(analysisResult.probabilities[0] * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-500 h-2 rounded-full" 
-                        style={{ width: `${analysisResult.probabilities[0] * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Medium Risk</span>
-                      <span>{(analysisResult.probabilities[1] * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-yellow-500 h-2 rounded-full" 
-                        style={{ width: `${analysisResult.probabilities[1] * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Low Risk</span>
-                      <span>{(analysisResult.probabilities[2] * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${analysisResult.probabilities[2] * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {newComplaints.length > 3 && (
+            <button
+              onClick={() => setShowAllNew(!showAllNew)}
+              className="mt-4 text-slate-400 hover:text-white transition-colors"
+            >
+              {showAllNew ? "Show Less" : "Show All"}
+            </button>
+          )}
+        </motion.section>
+
+        {/* Pending Encroachments */}
+        <motion.section
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700"
+        >
+          <h2 className="text-2xl font-semibold mb-4 flex items-center">
+            <Clock className="text-yellow-400 mr-2" />
+            {showAllPending ? "All Pending Encroachments" : "Pending Encroachments"}
+          </h2>
+          <div className="space-y-4">
+            {(showAllPending ? pendingComplaints : pendingComplaints.slice(0, 3)).map(
+              (complaint, i) => (
+                <motion.div
+                  key={complaint._id || complaint.id}
+                  custom={i}
+                  variants={fadeInUp}
+                  whileHover={itemHover}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  className="cursor-pointer bg-slate-700 shadow-md hover:shadow-lg border border-slate-600 rounded-xl p-5 transition-all duration-200"
+                  onClick={() => setPopupComplaint(complaint)}
+                >
+                  <h3 className="font-semibold text-lg text-gray-100 mb-1">
+                    {complaint.title}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-1">
+                    {complaint.location}
+                  </p>
+                  <p
+                    className={`text-sm mb-2 font-medium ${
+                      complaint.status === "Resolved"
+                        ? "text-green-400"
+                        : complaint.status === "Pending"
+                        ? "text-yellow-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    Status: {complaint.status}
+                  </p>
+                  <p className="text-xs text-gray-500">{complaint.date}</p>
+                </motion.div>
+              )
+            )}
+          </div>
+          {pendingComplaints.length > 3 && (
+            <button
+              onClick={() => setShowAllPending(!showAllPending)}
+              className="mt-4 text-slate-400 hover:text-white transition-colors"
+            >
+              {showAllPending ? "Show Less" : "Show All"}
+            </button>
+          )}
+        </motion.section>
+      </div>
+
+      {/* Complaint Detail Popup */}
+      {popupComplaint && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 border border-slate-700">
+            <h3 className="text-2xl font-bold mb-2 text-gray-100">
+              {popupComplaint.title}
+            </h3>
+            <div className="space-y-2 text-gray-300">
+              <p>
+                <span className="font-semibold">Description:</span>{" "}
+                {popupComplaint.description}
+              </p>
+              <p>
+                <span className="font-semibold">Location:</span>{" "}
+                {popupComplaint.location}
+              </p>
+              <p>
+                <span className="font-semibold">Status:</span>{" "}
+                <span
+                  className={
+                    popupComplaint.status === "Resolved"
+                      ? "text-green-400"
+                      : popupComplaint.status === "Pending"
+                      ? "text-yellow-400"
+                      : "text-red-400"
+                  }
+                >
+                  {popupComplaint.status}
+                </span>
+              </p>
+              <p>
+                <span className="font-semibold">Submitted by:</span>{" "}
+                {popupComplaint.submittedBy}
+              </p>
+              <p>
+                <span className="font-semibold">Date:</span>{" "}
+                {new Date(popupComplaint.submittedAt).toLocaleString()}
+              </p>
             </div>
-            
-            <div className="mt-6 flex justify-end space-x-3">
+            <div className="flex justify-end mt-6">
               <button
-                onClick={() => {
-                  setAnalysisResult(null);
-                  setCapturedImage(null);
-                  stopCamera();
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                onClick={() => setPopupComplaint(null)}
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
               >
                 Close
               </button>
@@ -457,161 +455,8 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <div className="p-6 md:p-10">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl font-bold mb-8 text-gray-900"
-        >
-          Encroachment Monitoring Dashboard
-        </motion.h1>
-
-        {/* Stats Overview */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
-        >
-          <StatCard
-            index={1}
-            icon={<Eye className="w-6 h-6" />}
-            label="Total Cases"
-            value={complaints.length}
-            colorClass="text-blue-500"
-          />
-          <StatCard
-            index={2}
-            icon={<AlertTriangle className="w-6 h-6" />}
-            label="Pending"
-            value={countByStatus("Pending")}
-            colorClass="text-yellow-500"
-          />
-          <StatCard
-            index={3}
-            icon={<MapPin className="w-6 h-6" />}
-            label="New Reports"
-            value={countByStatus("New")}
-            colorClass="text-red-500"
-          />
-          <StatCard
-            index={4}
-            icon={<TrendingUp className="w-6 h-6" />}
-            label="Resolution Rate"
-            value={`${resolutionRate}%`}
-            colorClass="text-green-500"
-          />
-          {/* Camera Button Card */}
-          <motion.div
-            custom={5}
-            variants={fadeInUp}
-            whileHover={cardHover}
-            className="bg-white shadow-lg rounded-2xl p-6 flex items-center justify-center cursor-pointer border border-gray-200 hover:border-blue-300 transition-colors"
-            onClick={startCamera}
-          >
-            <div className="flex flex-col items-center">
-              <Camera className="w-8 h-8 text-blue-500 mb-2" />
-              <span className="text-sm text-gray-700 text-center">Capture & Analyze</span>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Pie Chart Section */}
-          <motion.div
-            custom={5}
-            variants={fadeInUp}
-            whileHover={cardHover}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="bg-white shadow-xl rounded-2xl p-6 border border-gray-200"
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
-              Encroachment Status Overview
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }: { name: string; percent: number }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  dataKey="value"
-                >
-                  {pieData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend
-                  wrapperStyle={{ color: "#374151", paddingTop: "10px" }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Risk Zones Chart */}
-          <motion.div
-            custom={6}
-            variants={fadeInUp}
-            whileHover={cardHover}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="bg-white shadow-xl rounded-2xl p-6 border border-gray-200"
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
-              High-Risk Zones (Predictive Analytics)
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={riskZones}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="zone" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  wrapperStyle={{ color: "#374151", paddingTop: "10px" }}
-                />
-                <Bar dataKey="risk" fill="#f87171" name="Risk Score" />
-                <Bar dataKey="cases" fill="#4ade80" name="Current Cases" />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
-
-        {/* Complaint Sections */}
-        {renderSection("New", showAllNew, () => setShowAllNew(!showAllNew), 7)}
-        {renderSection(
-          "Pending",
-          showAllPending,
-          () => setShowAllPending(!showAllPending),
-          8
-        )}
-        {renderSection(
-          "Resolved",
-          showAllResolved,
-          () => setShowAllResolved(!showAllResolved),
-          9
-        )}
-
-        {/* Complaint Popup */}
-        {popupComplaint && (
-          <ComplaintPopup
-            complaint={popupComplaint}
-            onClose={() => setPopupComplaint(null)}
-          />
-        )}
-      </div>
+      {/* Status Legend */}
+      <StatusLegend />
     </div>
   );
 };

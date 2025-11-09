@@ -1,5 +1,5 @@
 // src/pages/admin/ServicesDemoPage.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,16 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Bell, 
   MapPin, 
-  Image as ImageIcon, 
   AlertTriangle, 
   CheckCircle, 
-  XCircle,
-  Eye
+  XCircle
 } from 'lucide-react';
 import AdminNavigation from '@/components/AdminNavigation';
 import { notificationService, Notification, Alert } from '@/services/notificationService';
 import { geospatialService, GeoPoint, BoundingBox } from '@/services/geospatialService';
-import { imageProcessingService, ProcessedImageData, ImageAnalysisResult } from '@/services/imageProcessingService';
 
 const ServicesDemoPage = () => {
   // Notification state
@@ -55,13 +52,6 @@ const ServicesDemoPage = () => {
   });
   const [distanceResult, setDistanceResult] = useState<number | null>(null);
   const [areaResult, setAreaResult] = useState<number | null>(null);
-  
-  // Image processing state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [processedImage, setProcessedImage] = useState<ProcessedImageData | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load initial data
   useEffect(() => {
@@ -156,46 +146,6 @@ const ServicesDemoPage = () => {
       severity: 'medium',
       description: ''
     });
-  };
-
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setProcessedImage(null);
-      setAnalysisResult(null);
-    }
-  };
-
-  // Process selected image
-  const handleProcessImage = async () => {
-    if (!selectedFile) return;
-    
-    setIsProcessing(true);
-    try {
-      const processed = await imageProcessingService.processImage(selectedFile);
-      setProcessedImage(processed);
-    } catch (error) {
-      console.error('Error processing image:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Analyze processed image
-  const handleAnalyzeImage = async () => {
-    if (!processedImage) return;
-    
-    setIsProcessing(true);
-    try {
-      const result = await imageProcessingService.analyzeImage(processedImage);
-      setAnalysisResult(result);
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-    } finally {
-      setIsProcessing(false);
-    }
   };
 
   // Calculate distance between first two points
@@ -655,107 +605,6 @@ const ServicesDemoPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Image Processing Service */}
-          <Card className="bg-white border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center text-gray-900">
-                <ImageIcon className="mr-2" />
-                Image Processing Service
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="image-upload" className="text-gray-700">Upload Image</Label>
-                  <Input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    ref={fileInputRef}
-                    className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                
-                {selectedFile && (
-                  <div className="p-3 bg-gray-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-700">
-                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                    </p>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button 
-                    onClick={handleProcessImage} 
-                    disabled={!selectedFile || isProcessing}
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    {isProcessing ? 'Processing...' : 'Process Image'}
-                  </Button>
-                  
-                  {processedImage && (
-                    <Button 
-                      onClick={handleAnalyzeImage} 
-                      disabled={isProcessing}
-                      className="bg-blue-500 hover:bg-blue-600"
-                    >
-                      {isProcessing ? 'Analyzing...' : 'Analyze Image'}
-                    </Button>
-                  )}
-                </div>
-                
-                {processedImage && (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-blue-5 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-800">
-                        Processed: {processedImage.width}x{processedImage.height} pixels
-                      </p>
-                    </div>
-                    
-                    <div className="border rounded-lg p-2 border-gray-300">
-                      <img 
-                        src={processedImage.dataUrl} 
-                        alt="Processed" 
-                        className="max-w-full h-auto"
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                {analysisResult && (
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-2">Analysis Results</h3>
-                    <div className="space-y-2">
-                      <p className="text-sm text-green-700">
-                        <span className="font-medium">Predicted Class:</span> {analysisResult.predictedClass}
-                      </p>
-                      <p className="text-sm text-green-700">
-                        <span className="font-medium">Confidence Scores:</span>
-                      </p>
-                      <div className="space-y-1">
-                        {analysisResult.probabilities.map((prob: number, index: number) => (
-                          <div key={index} className="flex items-center">
-                            <span className="text-xs w-20 text-green-700">Class {index}:</span>
-                            <div className="flex-1 ml-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-green-600 h-2 rounded-full" 
-                                  style={{ width: `${prob * 100}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                            <span className="text-xs ml-2 text-green-700">{(prob * 100).toFixed(1)}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

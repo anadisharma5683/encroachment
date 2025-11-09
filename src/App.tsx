@@ -23,6 +23,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import MonitoringPage from "./pages/admin/MonitoringPage";
 import ServicesDemoPage from "./pages/admin/ServicesDemoPage";
 import AlertsPage from "./pages/admin/AlertsPage";
+import TestImageDetection from "./pages/admin/TestImageDetection";
 
 // Optionally later you can uncomment below
 // import AdminDashboard from "./pages/AdminDashboard";
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/admin/monitoring" element={<MonitoringPage />} />
           <Route path="/admin/alerts" element={<AlertsPage />} />
           <Route path="/admin/services" element={<ServicesDemoPage />} />
+          <Route path="/admin/test-detection" element={<TestImageDetection />} />
 
         </Routes>
       </BrowserRouter>

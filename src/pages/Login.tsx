@@ -2,10 +2,7 @@ import React, { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-
-// ✅ Use a reliable hosted image
-const BG_IMAGE_URL =
-  "https://upload.wikimedia.org/wikipedia/commons/8/87/Rajwada_Indore_01.jpg";
+import rajwadaImage from '@/assets/rajwada.jpeg'; // Local image import
 
 // ✅ Type for user role (for scalability)
 type UserRole = "admin" | "employee" | "citizen" | "unknown";
@@ -55,7 +52,7 @@ const Login: React.FC = () => {
 
     try {
       // Make API call to backend
-      const response = await fetch(`/api/login`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +75,7 @@ const Login: React.FC = () => {
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("An error occurred during login. Please try again.");
+      setError("An error occurred during login. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -90,9 +87,16 @@ const Login: React.FC = () => {
     setSuccess("");
     setLoading(true);
 
+    // Basic validation
+    if (!username || !passcode) {
+      setError("Username and password are required");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Make API call to backend
-      const response = await fetch(`/api/register`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +125,7 @@ const Login: React.FC = () => {
       }
     } catch (err) {
       console.error("Registration error:", err);
-      setError("An error occurred during registration. Please try again.");
+      setError("An error occurred during registration. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -354,7 +358,7 @@ const Login: React.FC = () => {
       {/* ---------- Right Side (Image) ---------- */}
       <div className="hidden md:block flex-1 relative overflow-hidden">
         <img
-          src={BG_IMAGE_URL}
+          src={rajwadaImage}
           alt="Rajwada Palace, Indore"
           className="w-full h-full object-cover brightness-75"
         />

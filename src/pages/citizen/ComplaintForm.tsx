@@ -5,7 +5,7 @@ import { useComplaintStore } from "@/store/complaintStore";
 
 const ComplaintForm: React.FC = () => {
   const navigate = useNavigate();
-  const addComplaint = useComplaintStore((state) => state.addComplaint);
+  const { addComplaint, fetchComplaints } = useComplaintStore();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -48,31 +48,28 @@ const ComplaintForm: React.FC = () => {
     }
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleQRChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({ ...prev, qr: e.target.files![0] }));
-    }
-  };
-
-  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 4);
-      setFormData((prev) => ({ ...prev, images: filesArray }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSaveInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSaveInfo(e.target.checked);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFormData(prev => ({
+        ...prev,
+        images: Array.from(e.target.files || []),
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Save user info if requested
@@ -100,7 +97,7 @@ const ComplaintForm: React.FC = () => {
       status: "Pending" as const,
     };
 
-    addComplaint(fullComplaint);
+    await addComplaint(fullComplaint);
     navigate("/complain_done");
   };
 
@@ -135,109 +132,174 @@ const ComplaintForm: React.FC = () => {
         <button
           type="button"
           onClick={handleAutofill}
-          className="text-sm text-blue-600 hover:text-blue-800 underline"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
         >
-          Autofill with sample data
+          Autofill Sample Data
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          name="name"
-          placeholder="Full Name"
-          required
-          value={formData.name}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="email"
-          placeholder="Email"
-          type="email"
-          required
-          value={formData.email}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="mobile"
-          placeholder="Mobile Number"
-          required
-          value={formData.mobile}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="house"
-          placeholder="House No."
-          required
-          value={formData.house}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="street"
-          placeholder="Street Name"
-          required
-          value={formData.street}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="city"
-          placeholder="City"
-          required
-          value={formData.city}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="state"
-          placeholder="State"
-          required
-          value={formData.state}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="pincode"
-          placeholder="Pincode"
-          required
-          value={formData.pincode}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          name="optionalName"
-          placeholder="Complainant Name (Optional)"
-          value={formData.optionalName}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        />
-        <textarea
-          name="reason"
-          placeholder="Describe your complaint"
-          required
-          value={formData.reason}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md h-24 resize-none"
-        ></textarea>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
+              Mobile Number
+            </label>
+            <input
+              type="tel"
+              id="mobile"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="optionalName" className="block text-sm font-medium text-gray-700 mb-1">
+              Optional Name (For anonymous complaints)
+            </label>
+            <input
+              type="text"
+              id="optionalName"
+              name="optionalName"
+              value={formData.optionalName}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+        </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Upload QR Code:
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address Details
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleQRChange}
-            className="w-full"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="house" className="block text-xs text-gray-500 mb-1">
+                House/Flat Number
+              </label>
+              <input
+                type="text"
+                id="house"
+                name="house"
+                value={formData.house}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="street" className="block text-xs text-gray-500 mb-1">
+                Street/Area
+              </label>
+              <input
+                type="text"
+                id="street"
+                name="street"
+                value={formData.street}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="city" className="block text-xs text-gray-500 mb-1">
+                City
+              </label>
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="state" className="block text-xs text-gray-500 mb-1">
+                State
+              </label>
+              <input
+                type="text"
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="pincode" className="block text-xs text-gray-500 mb-1">
+                Pincode
+              </label>
+              <input
+                type="text"
+                id="pincode"
+                name="pincode"
+                value={formData.pincode}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
+            Reason for Complaint *
+          </label>
+          <textarea
+            id="reason"
+            name="reason"
+            value={formData.reason}
+            onChange={handleChange}
+            required
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="Please describe the issue in detail..."
           />
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Upload Building Images (Max 4):
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Upload Images (Optional)
           </label>
           <input
             type="file"
