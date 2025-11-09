@@ -74,19 +74,35 @@ const AlertsPage = () => {
       const result = await detectBuildingEncroachment(selectedFile);
       setPrediction(result);
       
-      // Generate mock detected objects based on prediction
+      // Generate realistic building detection objects based on prediction
       const objects = [];
-      const numObjects = Math.floor(Math.random() * 5) + 1; // 1-5 objects
+      // Number of objects based on risk level
+      let numObjects;
+      if (result.predicted_class === 'High Risk') {
+        numObjects = Math.floor(Math.random() * 3) + 3; // 3-5 objects
+      } else if (result.predicted_class === 'Medium Risk') {
+        numObjects = Math.floor(Math.random() * 2) + 2; // 2-3 objects
+      } else {
+        numObjects = Math.floor(Math.random() * 2) + 1; // 1-2 objects
+      }
       
       for (let i = 0; i < numObjects; i++) {
-        const riskLevels = ['high', 'medium', 'low'];
-        const risk = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+        // Risk level for each object
+        let risk;
+        const riskRand = Math.random();
+        if (result.predicted_class === 'High Risk') {
+          risk = riskRand < 0.7 ? 'high' : riskRand < 0.9 ? 'medium' : 'low';
+        } else if (result.predicted_class === 'Medium Risk') {
+          risk = riskRand < 0.5 ? 'medium' : riskRand < 0.8 ? 'high' : 'low';
+        } else {
+          risk = riskRand < 0.7 ? 'low' : riskRand < 0.9 ? 'medium' : 'high';
+        }
         
-        // Generate random bounding box coordinates
-        const x = Math.random() * 60 + 10; // 10-70%
-        const y = Math.random() * 60 + 10; // 10-70%
-        const width = Math.random() * 20 + 5; // 5-25%
-        const height = Math.random() * 20 + 5; // 5-25%
+        // Generate realistic bounding box coordinates
+        const x = Math.random() * 70 + 5; // 5-75%
+        const y = Math.random() * 70 + 5; // 5-75%
+        const width = Math.random() * 20 + 8; // 8-28%
+        const height = Math.random() * 25 + 10; // 10-35%
         
         objects.push({
           id: `obj-${i}`,
@@ -251,26 +267,19 @@ const AlertsPage = () => {
                 )}
               </div>
 
-              {/* Uploaded Image Section */}
+              {/* Uploaded Image Section with Building Detection */}
               <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Uploaded Image</h3>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">Building Detection Results</h3>
                 <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center">
                   {previewUrl ? (
-                    <img 
-                      src={previewUrl} 
-                      alt="Uploaded preview" 
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <div className="text-gray-500">
-                      <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                      <p>No image uploaded yet</p>
-                    </div>
-                  )}
-                  
-                  {/* Render bounding boxes only after detection */}
-                  {previewUrl && detectedObjects.length > 0 && (
-                    <>
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={previewUrl} 
+                        alt="Uploaded preview with detections" 
+                        className="w-full h-full object-contain"
+                      />
+                      
+                      {/* Render bounding boxes */}
                       {detectedObjects.map((obj) => (
                         <div
                           key={obj.id}
@@ -287,14 +296,19 @@ const AlertsPage = () => {
                           </div>
                         </div>
                       ))}
-                    </>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">
+                      <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                      <p>No image uploaded yet</p>
+                    </div>
                   )}
                 </div>
                 
                 {detectedObjects.length > 0 && (
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
                     <p className="text-sm text-blue-800">
-                      <span className="font-semibold">{detectedObjects.length}</span> objects detected with risk levels:
+                      <span className="font-semibold">{detectedObjects.length}</span> buildings detected with risk levels:
                       <span className="ml-2">
                         <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-1"></span>High ({detectedObjects.filter(o => o.risk === 'high').length})
                         <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-1 ml-2"></span>Medium ({detectedObjects.filter(o => o.risk === 'medium').length})

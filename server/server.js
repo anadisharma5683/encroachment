@@ -1,6 +1,7 @@
 const http = require('http');
 const { MongoClient } = require('mongodb');
 const url = require('url');
+const crypto = require('crypto');
 require('dotenv').config();
 
 // MongoDB connection
@@ -10,6 +11,38 @@ const client = new MongoClient(uri);
 let db;
 let usersCollection;
 let complaintsCollection;
+
+// Generate a 4-digit key for password encryption
+function generateEncryptionKey() {
+  return Math.floor(1000 + Math.random() * 9000).toString(); // Generates a number between 1000-9999
+}
+
+// Simple encryption function using the 4-digit key
+function encryptPassword(password, key) {
+  const algorithm = 'aes-256-cbc';
+  const keyBuffer = crypto.scryptSync(key, 'salt', 32);
+  const iv = Buffer.alloc(16, 0); // Fixed IV for simplicity
+  const cipher = crypto.createCipheriv(algorithm, keyBuffer, iv);
+  let encrypted = cipher.update(password, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+}
+
+// Simple decryption function using the 4-digit key
+function decryptPassword(encryptedPassword, key) {
+  try {
+    const algorithm = 'aes-256-cbc';
+    const keyBuffer = crypto.scryptSync(key, 'salt', 32);
+    const iv = Buffer.alloc(16, 0); // Fixed IV for simplicity
+    const decipher = crypto.createDecipheriv(algorithm, keyBuffer, iv);
+    let decrypted = decipher.update(encryptedPassword, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return null;
+  }
+}
 
 async function connectToDatabase() {
   try {
@@ -58,6 +91,8 @@ function sendJsonResponse(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+
+
 // Handle login
 async function handleLogin(req, res) {
   try {
@@ -74,16 +109,30 @@ async function handleLogin(req, res) {
     // Find user in database
     const user = await usersCollection.findOne({ username: username });
     
-    if (user && user.password === password) {
-      // Login successful
-      sendJsonResponse(res, 200, { 
-        success: true, 
-        message: 'Login successful',
-        role: user.role || 'unknown',
-        user: { id: user._id, username: user.username, role: user.role }
-      });
+    if (user) {
+      // Generate the encryption key from the stored key fragment
+      const encryptionKey = user.keyFragment.toString().padStart(4, '0');
+      
+      // Decrypt the stored password
+      const decryptedPassword = decryptPassword(user.password, encryptionKey);
+      
+      if (decryptedPassword && decryptedPassword === password) {
+        // Login successful
+        sendJsonResponse(res, 200, { 
+          success: true, 
+          message: 'Login successful',
+          role: user.role || 'unknown',
+          user: { id: user._id, username: user.username, role: user.role }
+        });
+      } else {
+        // Invalid password
+        sendJsonResponse(res, 401, { 
+          success: false, 
+          message: 'Invalid username or password' 
+        });
+      }
     } else {
-      // Login failed
+      // User not found
       sendJsonResponse(res, 401, { 
         success: false, 
         message: 'Invalid username or password' 
@@ -129,10 +178,17 @@ async function handleRegister(req, res) {
       });
     }
     
-    // Create new user
+    // Generate a 4-digit encryption key
+    const encryptionKey = generateEncryptionKey();
+    
+    // Encrypt the password using the key
+    const encryptedPassword = encryptPassword(password, encryptionKey);
+    
+    // Create new user with encrypted password and key fragment
     const newUser = {
       username: username,
-      password: password, // In production, this should be hashed
+      password: encryptedPassword,
+      keyFragment: parseInt(encryptionKey), // Store only the key fragment
       role: role || 'citizen', // Default role
       createdAt: new Date()
     };
