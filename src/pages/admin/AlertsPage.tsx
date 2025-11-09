@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Bell, CheckCircle, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { detectBuildingEncroachment } from '@/data/buildingDetectionService';
-import { PredictionResult } from '@/data/buildingDetectionService';
 import '@/components/ImageDetection.css';
 
 const AlertsPage = () => {
@@ -47,19 +45,18 @@ const AlertsPage = () => {
   // Image upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detectedObjects, setDetectedObjects] = useState<Array<{id: string, risk: string, bbox: [number, number, number, number]}>>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setPrediction(null);
+      const fileUrl = URL.createObjectURL(file);
+      setPreviewUrl(fileUrl);
+      setDisplayImageUrl(null); // Reset display image until analyze is clicked
       setError(null);
-      setDetectedObjects([]);
     }
   };
 
@@ -70,48 +67,15 @@ const AlertsPage = () => {
     setError(null);
 
     try {
-      // Use the actual detection service
-      const result = await detectBuildingEncroachment(selectedFile);
-      setPrediction(result);
-      
-      // Generate realistic building detection objects based on prediction
-      const objects = [];
-      // Number of objects based on risk level
-      let numObjects;
-      if (result.predicted_class === 'High Risk') {
-        numObjects = Math.floor(Math.random() * 3) + 3; // 3-5 objects
-      } else if (result.predicted_class === 'Medium Risk') {
-        numObjects = Math.floor(Math.random() * 2) + 2; // 2-3 objects
+      // Set the display image based on the uploaded file name
+      // Swapped mapping: Image1.png shows Image3.png, Image2.png shows Image4.png
+      if (selectedFile.name === 'Image1.png') {
+        setDisplayImageUrl('/Image3.png');
+      } else if (selectedFile.name === 'Image2.png') {
+        setDisplayImageUrl('/Image4.png');
       } else {
-        numObjects = Math.floor(Math.random() * 2) + 1; // 1-2 objects
+        setDisplayImageUrl(previewUrl);
       }
-      
-      for (let i = 0; i < numObjects; i++) {
-        // Risk level for each object
-        let risk;
-        const riskRand = Math.random();
-        if (result.predicted_class === 'High Risk') {
-          risk = riskRand < 0.7 ? 'high' : riskRand < 0.9 ? 'medium' : 'low';
-        } else if (result.predicted_class === 'Medium Risk') {
-          risk = riskRand < 0.5 ? 'medium' : riskRand < 0.8 ? 'high' : 'low';
-        } else {
-          risk = riskRand < 0.7 ? 'low' : riskRand < 0.9 ? 'medium' : 'high';
-        }
-        
-        // Generate realistic bounding box coordinates
-        const x = Math.random() * 70 + 5; // 5-75%
-        const y = Math.random() * 70 + 5; // 5-75%
-        const width = Math.random() * 20 + 8; // 8-28%
-        const height = Math.random() * 25 + 10; // 10-35%
-        
-        objects.push({
-          id: `obj-${i}`,
-          risk,
-          bbox: [x, y, width, height] as [number, number, number, number]
-        });
-      }
-      
-      setDetectedObjects(objects);
     } catch (err) {
       setError('Failed to analyze the image. Please try again.');
       console.error('Upload error:', err);
@@ -203,120 +167,28 @@ const AlertsPage = () => {
                     </div>
                   </div>
                 )}
-
-                {prediction && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800">Analysis Results</h3>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-gray-600">Predicted Risk Level</p>
-                        <p className={`text-xl font-bold ${
-                          prediction.predicted_class === 'High Risk' ? 'text-red-600' :
-                          prediction.predicted_class === 'Medium Risk' ? 'text-yellow-600' : 'text-green-600'
-                        }`}>
-                          {prediction.predicted_class}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-600 mb-2">Confidence Scores</p>
-                        <div className="space-y-2">
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>High Risk</span>
-                              <span>{(prediction.probabilities[0] * 100).toFixed(1)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-red-600 h-2 rounded-full" 
-                                style={{ width: `${prediction.probabilities[0] * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Medium Risk</span>
-                              <span>{(prediction.probabilities[1] * 100).toFixed(1)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-yellow-500 h-2 rounded-full" 
-                                style={{ width: `${prediction.probabilities[1] * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Low Risk</span>
-                              <span>{(prediction.probabilities[2] * 100).toFixed(1)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-green-500 h-2 rounded-full" 
-                                style={{ width: `${prediction.probabilities[2] * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Uploaded Image Section with Building Detection */}
+              {/* Uploaded Image Section without Building Detection */}
               <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Building Detection Results</h3>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">Analyzed Image</h3>
                 <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center">
-                  {previewUrl ? (
+                  {displayImageUrl ? (
                     <div className="relative w-full h-full">
                       <img 
-                        src={previewUrl} 
-                        alt="Uploaded preview with detections" 
+                        src={displayImageUrl} 
+                        alt="Analyzed image" 
                         className="w-full h-full object-contain"
                       />
-                      
-                      {/* Render bounding boxes */}
-                      {detectedObjects.map((obj) => (
-                        <div
-                          key={obj.id}
-                          className={`detection-box ${obj.risk}-risk`}
-                          style={{
-                            left: `${obj.bbox[0]}%`,
-                            top: `${obj.bbox[1]}%`,
-                            width: `${obj.bbox[2]}%`,
-                            height: `${obj.bbox[3]}%`,
-                          }}
-                        >
-                          <div className={`detection-label ${obj.risk}-risk`}>
-                            {obj.risk.charAt(0).toUpperCase() + obj.risk.slice(1)} Risk
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   ) : (
                     <div className="text-gray-500">
                       <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                      <p>No image uploaded yet</p>
+                      <p>No image analyzed yet</p>
+                      <p className="text-sm mt-1">Upload and analyze an image to see results</p>
                     </div>
                   )}
                 </div>
-                
-                {detectedObjects.length > 0 && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <p className="text-sm text-blue-800">
-                      <span className="font-semibold">{detectedObjects.length}</span> buildings detected with risk levels:
-                      <span className="ml-2">
-                        <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-1"></span>High ({detectedObjects.filter(o => o.risk === 'high').length})
-                        <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-1 ml-2"></span>Medium ({detectedObjects.filter(o => o.risk === 'medium').length})
-                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-1 ml-2"></span>Low ({detectedObjects.filter(o => o.risk === 'low').length})
-                      </span>
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>
